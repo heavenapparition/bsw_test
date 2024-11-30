@@ -7,7 +7,7 @@ from httpx import AsyncClient
 
 @pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_simple_workflow(anyio_backend):
-    test_id = "test_id"
+    test_id = 1
 
     test_event = {
         "event_id": test_id,

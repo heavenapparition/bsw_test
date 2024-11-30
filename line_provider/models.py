@@ -11,10 +11,13 @@ class EventState(enum.Enum):
 
 
 class EventCreate(BaseModel):
+    event_id: int
     coefficient: Optional[PositiveFloat] = None
     deadline: Optional[int] = None
-    state: Optional[EventState] = None
+    state: EventState = EventState.NEW
+
 
 
 class Event(EventCreate):
-    event_id: int
+    pass
+

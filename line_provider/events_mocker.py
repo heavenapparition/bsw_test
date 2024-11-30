@@ -25,7 +25,7 @@ class EventsMocker:
 
     def create_random_event(self) -> Event:
         return Event(
-            event_id=str(random.randint(1, 100)),
+            event_id=random.randint(1, 100),
             coefficient=round(random.uniform(0.1, 5.0), 2),
             deadline=int(time.time() + random.randint(20, 120)),
             state=EventState.NEW,
@@ -61,8 +61,8 @@ class EventsMocker:
             setattr(self.events[event_to_create.event_id], p_name, p_value)
         return self.events[event_to_create.event_id]
 
-    def get_event(self, event_id: str) -> Event:
-        return self.events.get(event_id)
+    def get_event(self, event_id: int) -> Event:
+        return self.events.get(str(event_id))
 
 
 events_manager = EventsMocker(10)
