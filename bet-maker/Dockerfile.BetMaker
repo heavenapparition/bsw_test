@@ -10,14 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy requirements and install dependencies
 COPY ./bet-maker/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
 COPY bet-maker/ .
 
-# Fix line endings and make start script executable
 RUN dos2unix start.sh || true && \
     chmod +x /app/start.sh
 
