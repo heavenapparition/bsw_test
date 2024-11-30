@@ -1,30 +1,25 @@
-from fastapi import FastAPI, Path, HTTPException, status
-from .models import Event, EventState
-from .events_mocker import events_base
+from events_mocker import events_manager
+from fastapi import FastAPI, HTTPException, status
+from models import Event
 
 app = FastAPI()
 
 
-@app.put('/event', status_code=status.HTTP_201_CREATED)
-async def create_event(event: Event):
-    if event.event_id not in events_base:
-        events_base[event.event_id] = event
-        return {}
-
-    for p_name, p_value in event.dict(exclude_unset=True).items():
-        setattr(events_base[event.event_id], p_name, p_value)
-
-    return {}
+@app.put("/event/", status_code=status.HTTP_201_CREATED, response_model=Event)
+async def create_event(event_to_create: Event):
+    created_event = events_manager.create_event(event_to_create)
+    return created_event
 
 
-@app.get('/event/{event_id}', status_code=status.HTTP_200_OK)
-async def get_event(event_id: str = Path(default=None)):
-    if event_id in events_base:
-        return events_base[event_id]
+@app.get("/event/{event_id}/", status_code=status.HTTP_200_OK, response_model=Event)
+async def get_event(event_id: str):
+    event = events_manager.get_event(event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
 
-    raise HTTPException(status_code=404, detail="Event not found")
 
-
-@app.get('/events', status_code=status.HTTP_200_OK)
+@app.get("/events/", status_code=status.HTTP_200_OK, response_model=dict[str, Event])
 async def get_events():
-    return list(e for e in events_base.values() if events_base.time() < e.deadline)
+    events = events_manager.get_events()
+    return events
