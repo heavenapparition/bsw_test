@@ -1,0 +1,24 @@
+FROM python:3.10
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    libpq-dev \
+    postgresql-client \
+    dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY ./bet-maker/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY bet-maker/ .
+
+# Fix line endings and make start script executable
+RUN dos2unix start.sh || true && \
+    chmod +x /app/start.sh
+
+CMD ["/bin/bash", "/app/start.sh"]
