@@ -1,7 +1,7 @@
 import enum
 from typing import List, Optional
 
-from pydantic import PositiveFloat, NonNegativeInt
+from pydantic import NonNegativeInt, PositiveFloat
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -46,7 +46,7 @@ class Bet(BetBase, table=True):
     event: Event = Relationship(
         back_populates="bets",
         sa_relationship_kwargs={
-            "lazy": "selectin",
+            "lazy": "noload",
             "cascade": "all, delete-orphan",
             "single_parent": True,
         },

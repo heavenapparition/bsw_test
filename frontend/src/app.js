@@ -9,13 +9,13 @@ async function fetchEvents() {
     try {
         const offset = state.events.page * state.events.limit;
         const response = await fetch(`${API_URL}/events/?offset=${offset}&limit=${state.events.limit}`);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         state.events.total = data.total;
         displayEvents(data.events || []);
         updatePaginationInfo('events');
@@ -40,7 +40,7 @@ function displayEvents(events) {
     eventsContainer.innerHTML = '';
 
     const eventsArray = Array.from(events || []);
-    
+
     if (eventsArray.length === 0) {
         eventsContainer.innerHTML = `
             <div class="alert alert-info" role="alert">
@@ -51,7 +51,7 @@ function displayEvents(events) {
     }
 
     const fragment = document.createDocumentFragment();
-    
+
     for (const event of eventsArray) {
         const card = document.createElement('div');
         card.className = 'col-md-4 mb-4';
@@ -72,7 +72,7 @@ function displayEvents(events) {
         `;
         fragment.appendChild(card);
     }
-    
+
     // Add all cards to container at once
     eventsContainer.appendChild(fragment);
 }
@@ -86,7 +86,7 @@ async function fetchBets() {
         }
         const data = await response.json();
         state.bets.total = data.total;
-        displayBets(data.bets || []);  
+        displayBets(data.bets || []);
         updatePaginationInfo('bets');
     } catch (error) {
         console.error('Error fetching bets:', error);
@@ -102,23 +102,23 @@ function updatePaginationInfo(type) {
     const { page, limit, total } = state[type];
     const totalPages = Math.ceil(total / limit);
     const currentPage = page + 1;
-    
+
     // Update page info
     const pageInfo = document.getElementById(`${type}-page-info`);
     if (pageInfo) {
         pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
     }
-    
+
     // Update total info
     const totalInfo = document.getElementById(`${type}-total-info`);
     if (totalInfo) {
         totalInfo.textContent = `Total ${type}: ${total}`;
     }
-    
+
     // Update button states
     const prevButton = document.querySelector(`#${type}-container .pagination .page-item:first-child button`);
     const nextButton = document.querySelector(`#${type}-container .pagination .page-item:last-child button`);
-    
+
     if (prevButton) {
         prevButton.disabled = page <= 0;
     }
@@ -131,15 +131,15 @@ function changePage(type, direction) {
     const { page, limit, total } = state[type];
     const totalPages = Math.ceil(total / limit);
     const newPage = direction === 'prev' ? page - 1 : page + 1;
-    
+
     // Validate the new page number
     if (newPage < 0 || newPage >= totalPages) {
         return;
     }
-    
+
     // Update the page number
     state[type].page = newPage;
-    
+
     // Fetch new data
     if (type === 'events') {
         fetchEvents();
@@ -152,7 +152,7 @@ function updateItemsPerPage(type) {
     const newLimit = parseInt(document.getElementById(`${type}-per-page`).value);
     state[type].limit = newLimit;
     state[type].page = 0; // Reset to first page
-    
+
     if (type === 'events') {
         fetchEvents();
     } else {

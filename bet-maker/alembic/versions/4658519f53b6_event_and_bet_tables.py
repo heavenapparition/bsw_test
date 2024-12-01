@@ -1,7 +1,7 @@
 """event and bet tables
 
 Revision ID: 4658519f53b6
-Revises: 
+Revises:
 Create Date: 2024-11-28 20:43:17.208537
 
 """

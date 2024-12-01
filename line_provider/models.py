@@ -17,7 +17,5 @@ class EventCreate(BaseModel):
     state: EventState = EventState.NEW
 
 
-
 class Event(EventCreate):
     pass
-

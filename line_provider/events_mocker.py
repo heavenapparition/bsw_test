@@ -5,7 +5,6 @@ from models import Event, EventState
 
 
 class EventsMocker:
-
     def __init__(self, initial_number_of_events: int = 10):
         self.events_counter = initial_number_of_events
         self.events = dict()
