@@ -11,6 +11,7 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black
+        stages: [commit]
         language_version: python3
 
   - repo: https://github.com/PyCQA/isort
