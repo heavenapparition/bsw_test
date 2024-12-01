@@ -1,2 +1,16 @@
 *.iml
 __pycache__
+
+postgres_data/
+
+*.log
+log/
+logs/
+
+.idea/
+.vscode/
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db
