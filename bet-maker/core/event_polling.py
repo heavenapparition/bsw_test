@@ -6,8 +6,10 @@ from typing import List, Optional
 
 from core.engine import async_session
 from core.line_provider_client import LineProviderClient
+from cruds import bet_crud, event_crud
 from fastapi import FastAPI
 from models import Event
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = getLogger(__name__)
@@ -28,27 +30,33 @@ class EventPollingManager:
     def cached_events(self) -> List[Event]:
         return self._cached_events
 
-    async def _update_events(self) -> None:
+    @property
+    def cached_events_count(self) -> int:
+        return len(self._cached_events)
+
+    def cached_events_paginated(self, offset: int, limit: int) -> List[Event]:
+        return self._cached_events[offset : offset + limit]
+
+    async def _get_line_provider_events(self) -> List[Event]:
         async with LineProviderClient() as client:
-            events = await client.get_availible_events()
-        current_timestamp = int(time.time())
+            return await client.get_availible_events()
 
+    async def _upsert_events_to_db(self, fetched_events: List[Event]) -> None:
         async with async_session() as session:
-            for event in events:
-                db_event = await session.get(Event, event.event_id)
-
+            for event in fetched_events:
+                db_event = await event_crud.get(session, event.event_id)
                 if db_event:
-                    for key, value in event.model_dump().items():
-                        setattr(db_event, key, value)
+                    db_event = await event_crud.update(
+                        session, event.event_id, event.model_dump()
+                    )
                 else:
-                    db_event = Event.model_validate(event.model_dump())
-                    session.add(db_event)
-
+                    db_event = await event_crud.create(session, event.model_dump())
             await session.commit()
+            self._cached_events = await event_crud.get_all_availiable(session)
 
-            statement = select(Event).where(Event.deadline > current_timestamp)
-            result = await session.execute(statement)
-            self._cached_events = result.scalars().all()
+    async def _update_events(self) -> None:
+        events = await self._get_line_provider_events()
+        await self._upsert_events_to_db(events)
 
     async def _polling_loop(self) -> None:
         self._is_running = True
