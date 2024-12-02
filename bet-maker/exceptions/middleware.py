@@ -32,7 +32,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={
-                    "error_type": ErrorCode.SYSTEM_ERROR,
+                    "error_type": ErrorType.SYSTEM_ERROR,
                     "message": "Internal server error",
                     "details": {"error_name": str(type(exc).__name__)},
                 },
