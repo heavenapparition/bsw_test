@@ -64,9 +64,22 @@ function displayEvents(events) {
                         <strong>Deadline:</strong> ${event.deadline ? new Date(event.deadline * 1000).toLocaleString() : 'N/A'}<br>
                         <strong>State:</strong> ${event.state || 'Unknown'}
                     </p>
-                    ${event.state === 'NEW' ? `
-                        <button class="btn btn-primary" onclick="placeBet(${event.event_id})">Place Bet</button>
-                    ` : ''}
+                    <form class="bet-form" onsubmit="event.preventDefault(); placeBet(${event.event_id})">
+                        <div class="input-group">
+                            <span class="input-group-text">Amount:</span>
+                            <input type="number"
+                                   class="form-control"
+                                   id="amount-${event.event_id}"
+                                   placeholder="Enter bet amount"
+                                   step="0.01"
+                                   min="0.01"
+                                   required
+                                   ${event.state !== 'NEW' ? 'disabled' : ''}>
+                            <button class="btn btn-primary" type="submit" ${event.state !== 'NEW' ? 'disabled' : ''}>
+                                Place Bet
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         `;
@@ -218,8 +231,17 @@ async function placeBet(eventId) {
         return;
     }
 
-    await createBet(eventId, amount);
-    fetchEvents();
+    try {
+        const bet = await createBet(eventId, amount);
+        if (bet) {
+            // Reset the form
+            amountInput.value = '';
+            // Refresh the bets list
+            fetchBets();
+        }
+    } catch (error) {
+        console.error('Error placing bet:', error);
+    }
 }
 
 function showBets() {
