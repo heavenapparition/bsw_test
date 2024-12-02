@@ -1,6 +1,8 @@
 import logging
+import time
 
 from core.event_polling import event_polling_manager, lifespan
+from cruds import bet_crud, event_crud
 from deps import PaginationDep, SessionDep
 from exceptions.app_exception import ApplicationException, ErrorType
 from exceptions.middleware import ErrorHandlingMiddleware
@@ -23,47 +25,38 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(ErrorHandlingMiddleware)
+# app.add_middleware(ErrorHandlingMiddleware)
 
 
 @app.get("/events/", status_code=status.HTTP_200_OK, response_model=EventOutList)
 async def get_events(session: SessionDep, pagination: PaginationDep):
     offset, limit = pagination
-    events = event_polling_manager.cached_events
-    total = len(events)
-    paginated_events = [event.model_dump() for event in events[offset : offset + limit]]
-
-    return {"events": paginated_events, "total": total}
+    events = event_polling_manager.cached_events_paginated(offset, limit)
+    total = event_polling_manager.cached_events_count
+    return {"events": events, "total": total}
 
 
 @app.post("/bet/", status_code=status.HTTP_200_OK, response_model=BetOut)
 async def create_bet(bet: BetCreate, session: SessionDep):
-    chosen_event_available = any(
-        event.event_id == bet.event_id for event in event_polling_manager.cached_events
-    )
-    if not chosen_event_available:
+    chosen_event = await event_crud.get(session, bet.event_id)
+    if not chosen_event or chosen_event.deadline < int(time.time()):
         raise ApplicationException(
             type_=ErrorType.NOT_FOUND,
             message="Event not found",
             details={"event_id": bet.event_id},
         )
-    db_bet = Bet(**bet.dict())
-    session.add(db_bet)
-    await session.commit()
-    await session.refresh(db_bet)
-    bet_out = db_bet.model_dump() | db_bet.event.model_dump()
-    return bet_out
+    db_bet = await bet_crud.create(session, bet.dict())
+    return BetOut(
+        **db_bet.model_dump(),
+        state=chosen_event.state,
+        coefficient=chosen_event.coefficient
+    )
 
 
 @app.get("/bets/", status_code=status.HTTP_200_OK, response_model=BetOutList)
 async def get_bets(session: SessionDep, pagination: PaginationDep):
     offset, limit = pagination
-    statement = select(Bet).offset(offset).limit(limit)
-    result = await session.execute(statement)
-    bets = result.scalars().all()
+    bets = await bet_crud.get_all_with_event_state(session, skip=offset, limit=limit)
+    total = await bet_crud.count(session)
 
-    bets_on_return = [bet.model_dump() | bet.event.model_dump() for bet in bets]
-    count_statement = select(func.count()).select_from(Bet)
-    total = await session.scalar(count_statement)
-
-    return {"bets": bets_on_return, "total": total}
+    return {"bets": bets, "total": total}
